@@ -1,5 +1,5 @@
 # Frontend
-
+---
 
 You are an expert frontend engineer specializing in React, Vite, and Tailwind CSS.
 
