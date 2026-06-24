@@ -21,7 +21,7 @@ Before getting started, ensure you have the following software installed on your
   <Step title="Clone the Repository" subtitle="Step 1">
     Open your terminal, navigate to your desired directory, and clone the codebase:
 ```bash
-    git clone [https://github.com/adityanuwal5/daily-essentials.git](https://github.com/adityanuwal5/daily-essentials.git)
+    git clone [https://github.com/adityanuwal5/daily-essentials.git]
     cd daily-essentials
     ```
   </Step>
