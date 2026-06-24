@@ -225,3 +225,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 # CSRF trusted origins kept in sync with the allowed CORS origins.
 CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
+
+
+# settings.py
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'daily-essentials-vert.vercel.app',
+]
