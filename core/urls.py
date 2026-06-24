@@ -28,6 +28,9 @@ from rest_framework.routers import DefaultRouter
 from apps.orders.views import DashboardMetricsView, OrderListCreateView
 from apps.products.views import AdminProductViewSet
 
+from django.urls import path
+from django.shortcuts import redirect
+
 # Admin-only product management router (RBAC enforced on the viewset).
 admin_router = DefaultRouter()
 admin_router.register(r"products", AdminProductViewSet, basename="admin-product")
@@ -47,4 +50,10 @@ urlpatterns = [
     path("api/products/", include("apps.products.urls")),
     path("api/orders/", OrderListCreateView.as_view(), name="orders"),
     path("api/admin/", include((api_admin_patterns, "admin-api"))),
+]
+
+
+urlpatterns = [
+    # ... your existing paths ...
+    path('', lambda request: redirect('api/products/')), 
 ]
