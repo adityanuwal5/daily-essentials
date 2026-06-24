@@ -188,9 +188,18 @@ USE_TZ = True
 # only when DEBUG is off so local `runserver` keeps serving static files
 # directly without needing a collectstatic run first.
 # --------------------------------------------------------------------------- #
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# Leading slash is important: it makes generated static URLs absolute
+# (/static/...) so the admin's CSS resolves correctly from any page depth
+# (e.g. /django-admin/) instead of being treated as relative.
+STATIC_URL = "/static/"
+# Collected into staticfiles_build/static — the path Vercel's static build
+# serves (see vercel.json). os.path.join keeps it explicit for the build.
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles_build", "static")
 
+# Django 5.0 configures storage backends via STORAGES (the modern replacement
+# for the deprecated STATICFILES_STORAGE — setting both would raise
+# ImproperlyConfigured). WhiteNoise's compressed/manifest storage is used in
+# production; plain storage locally so `runserver` needs no collectstatic.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
