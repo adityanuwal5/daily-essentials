@@ -1,0 +1,14 @@
+{
+  "name": "dailyessentials-test-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Autonomous security & QA test agents for the DailyEssentials full-stack app",
+  "scripts": {
+    "test:all": "python -m tests.run_all",
+    "test:security": "python -m tests.run_all security",
+    "test:qa": "python -m tests.run_all qa",
+    "test:auth": "python -m tests.run_all auth",
+    "test:load": "python -m tests.run_all load",
+    "test:setup": "pip install -r tests/requirements.txt && python -m playwright install chromium"
+  }
+}

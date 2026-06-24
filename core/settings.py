@@ -1,0 +1,227 @@
+"""
+Django settings for the DailyEssentials backend (project: core).
+
+The configuration is intentionally environment-aware: secrets and toggles are
+read from the process environment so the same code runs in local development
+and production. Sensible development defaults are provided so the project boots
+out of the box against a local SQLite database.
+"""
+
+import os
+from datetime import timedelta
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def env_bool(name, default=False):
+    """Read a boolean-ish environment variable ('1', 'true', 'yes')."""
+    return os.environ.get(name, str(default)).lower() in {"1", "true", "yes", "on"}
+
+
+# --------------------------------------------------------------------------- #
+# Core security
+# --------------------------------------------------------------------------- #
+# SECURITY WARNING: a generated key is used for local development. In any real
+# deployment, set DJANGO_SECRET_KEY in the environment.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-4l3m0p4oo^1htek!6k(+my@v+3gacou)cck9c!v-&tm6!j5pz4",
+)
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env_bool("DJANGO_DEBUG", default=True)
+
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
+).split(",")
+
+
+# --------------------------------------------------------------------------- #
+# Application definition
+# --------------------------------------------------------------------------- #
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    # Third-party
+    "rest_framework",
+    "corsheaders",
+    "django_filters",
+    # Local apps
+    "apps.authentication",
+    "apps.products",
+    "apps.orders",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    # CORS must sit as high as possible, and before CommonMiddleware, so the
+    # appropriate Access-Control headers are attached to every response.
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "core.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "core.wsgi.application"
+
+
+# --------------------------------------------------------------------------- #
+# Database — local SQLite relational DBMS.
+# All schema is expressed through the Django ORM, keeping the project
+# database-agnostic: pointing DATABASES at Postgres/MySQL requires no model
+# changes.
+# --------------------------------------------------------------------------- #
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+        # SQLite write-concurrency hardening. `timeout` makes a blocked writer
+        # wait (up to 20s) for the lock instead of immediately raising
+        # "database is locked" -> HTTP 500 under concurrent checkouts.
+        #
+        # NOTE: the `init_command` OPTION is only supported on Django 5.1+. On
+        # this project's Django 5.0, WAL journal mode is enabled instead via a
+        # `connection_created` signal (see apps/products/apps.py), which runs
+        # `PRAGMA journal_mode=WAL` on every new SQLite connection.
+        "OPTIONS": {
+            "timeout": 20,
+        },
+    }
+}
+
+
+# --------------------------------------------------------------------------- #
+# Custom user model
+# --------------------------------------------------------------------------- #
+AUTH_USER_MODEL = "authentication.CustomUser"
+
+
+# --------------------------------------------------------------------------- #
+# Password validation — strict regulation engine.
+# Enforces minimum length, blocks common/numeric-only passwords, and (via the
+# custom validator) requires a mix of letters and numbers.
+# --------------------------------------------------------------------------- #
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+    {
+        "NAME": "apps.authentication.validators.LetterNumberValidator",
+    },
+]
+
+
+# --------------------------------------------------------------------------- #
+# Internationalization
+# --------------------------------------------------------------------------- #
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "Asia/Kolkata"
+USE_I18N = True
+USE_TZ = True
+
+
+# --------------------------------------------------------------------------- #
+# Static files
+# --------------------------------------------------------------------------- #
+STATIC_URL = "static/"
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# --------------------------------------------------------------------------- #
+# Django REST Framework
+# --------------------------------------------------------------------------- #
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        # Custom JWT auth that can also read the access token from a cookie.
+        "apps.authentication.authentication.CookieJWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ),
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+    ),
+}
+
+
+# --------------------------------------------------------------------------- #
+# Simple JWT — short-lived access tokens, long-lived refresh tokens.
+# The refresh token is delivered to the browser only inside an HttpOnly cookie
+# (see the auth views), so client-side scripts can never read it.
+# --------------------------------------------------------------------------- #
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": SECRET_KEY,
+}
+
+# Name and behaviour of the HttpOnly refresh cookie.
+JWT_AUTH_REFRESH_COOKIE = "refresh_token"
+# Mirror the access token into a cookie too, so the SPA can stay authenticated
+# without storing anything in JS-readable localStorage.
+JWT_AUTH_ACCESS_COOKIE = "access_token"
+# Secure=True requires HTTPS; disabled in local dev where DEBUG is on.
+JWT_AUTH_COOKIE_SECURE = not DEBUG
+JWT_AUTH_COOKIE_SAMESITE = "Lax"
+# Path scoping: the refresh cookie is only sent to the refresh endpoint.
+JWT_AUTH_REFRESH_COOKIE_PATH = "/api/auth/"
+
+
+# --------------------------------------------------------------------------- #
+# CORS — Module 1.
+# Only the local React (Vite) dev server may call this API in the browser, and
+# credentials (cookies) are allowed so the HttpOnly refresh cookie round-trips.
+# --------------------------------------------------------------------------- #
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF trusted origins kept in sync with the allowed CORS origins.
+CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)

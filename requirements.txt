@@ -1,0 +1,7 @@
+# DailyEssentials backend dependencies
+Django==5.0.6
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.2
+PyJWT==2.13.0

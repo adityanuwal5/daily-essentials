@@ -1,0 +1,5 @@
+# Test-suite dependencies (separate from the backend's requirements.txt).
+#   pip install -r tests/requirements.txt
+#   python -m playwright install chromium   # one-time, for the QA crawl agent
+requests>=2.31.0
+playwright>=1.40.0

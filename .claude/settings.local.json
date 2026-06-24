@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($py = \"D:\\\\daily-essentials\\\\venv\\\\Scripts\\\\python.exe\"; $mg = \"D:\\\\daily-essentials\\\\manage.py\"; Remove-Item \"D:\\\\daily-essentials\\\\_smoke_test.py\" -Force; Remove-Item \"D:\\\\daily-essentials\\\\db.sqlite3\" -Force; & $py $mg migrate --no-input; & $py $mg seed_db)",
+      "Bash(cd /d/daily-essentials && find core apps manage.py requirements.txt .gitignore .env.example README.md -type f -not -path \"*__pycache__*\" 2>/dev/null | sort)",
+      "Bash(cd /d/daily-essentials/daily-essential-frontend/src && find . -type f | sort && echo \"=== vite.config ===\" && cat ../vite.config.js)",
+      "Bash(cat .env.example)",
+      "Bash(cat .env)",
+      "Bash(ls node_modules/axios/package.json)",
+      "Bash(node -e \"console.log\\('axios', require\\('./node_modules/axios/package.json'\\).version\\)\")",
+      "Bash(cd /tmp)",
+      "Bash(seq 1 20)",
+      "Bash(curl -s -o /dev/null \"http://localhost:8000/api/products/\")",
+      "Bash(break)",
+      "Bash(sleep 1)",
+      "Bash(sed 's/=[A-Za-z0-9._-]*;/=<redacted>;/')",
+      "Read(//tmp/**)",
+      "Bash(awk '{print $6, $7}')",
+      "Bash(python -c \"import json;print\\(json.load\\(open\\('/tmp/login.json'\\)\\)['access']\\)\")",
+      "Bash(echo \"=== 4. Refresh from HttpOnly cookie \\(no body, cookie jar\\) ===\")",
+      "Bash(curl -s -b /tmp/cj.txt -H 'Origin: __TRACKED_VAR__' -X POST __TRACKED_VAR__/auth/refresh/)"
+    ]
+  }
+}
