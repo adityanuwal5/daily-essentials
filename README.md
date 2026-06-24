@@ -1,75 +1,27 @@
-# DailyEssentials — Backend API
+# 🛒 Daily Essentials | Full-Stack E-Commerce Platform
 
-A secure, production-grade Django REST Framework backend for the **DailyEssentials**
-quick-commerce app. Built with a modular app architecture, JWT auth over HttpOnly
-cookies, strict password regulation, and server-side role-based access control.
+A secure, production-grade full-stack web application built to manage and deliver daily grocery essentials. This project features a robust **Django REST Framework** backend and a lightning-fast **React (Vite)** frontend, secured by industry-standard JWT HttpOnly cookies and a custom automated QA suite.
 
-## Tech stack
+📖 **Looking to run this project?** Please see the [SETUP.md](./SETUP.md) file for complete cloning and installation instructions.
 
-- **Django 5.0** + **Django REST Framework** — API & ORM
-- **djangorestframework-simplejwt** — JWT access/refresh tokens
-- **django-cors-headers** — CORS protection
-- **django-filter** — query-parameter filtering
-- **SQLite** — local relational DBMS (database-agnostic via the ORM)
+## 🛠️ Tech Stack
+| Frontend | Backend | Testing & Database |
+| :--- | :--- | :--- |
+| React 18+ (Vite) | Django 5.0.6 & DRF | Playwright & Pytest |
+| Tailwind CSS | djangorestframework-simplejwt | SQLite (WAL Hardened) |
+| Axios | django-filter & cors-headers | Custom Testing Orchestrator |
 
-## Project structure
+## 🛡️ Security Modules & Architecture
 
-```
-core/                       Project config (settings, root urls, wsgi/asgi)
-apps/
-  authentication/           CustomUser, JWT cookie auth, password rules
-  products/                 Product catalog, RBAC permissions, seed command
-  orders/                   Order + OrderItem, checkout, admin dashboard
-manage.py
-requirements.txt
-.env.example
-```
+**1. CORS Protection** — Only `http://localhost:5173` (the React/Vite dev server) may call the API from a browser, with credentials enabled so the HttpOnly cookies round-trip. 
 
-## Quick start
+**2. JWT via HttpOnly Cookies** — Login issues a short-lived (15 min) access token and a long-lived (7 day) refresh token. The refresh token is delivered *only* inside an HttpOnly, path-scoped cookie, preventing XSS payloads from reading it. `/api/auth/refresh/` reads that cookie to mint new access tokens.
 
-```bash
-# 1. Create and activate a virtual environment
-python -m venv venv
-venv\Scripts\activate            # Windows
-# source venv/bin/activate       # macOS / Linux
+**3. Strict Password Policy** — Django's validation engine enforces minimum length, blocks common and purely-numeric passwords, and a custom validator requires a combination of letters and numbers.
 
-# 2. Install dependencies
-pip install -r requirements.txt
+**4. Server-Side RBAC** — The `IsAdminUserRole` permission gates all admin writes and the metrics dashboard, returning `403 Forbidden` to regular clients.
 
-# 3. (Optional) configure environment
-copy .env.example .env           # then edit values
-
-# 4. Apply migrations and seed the catalog
-python manage.py migrate
-python manage.py seed_db         # add --flush to wipe first
-
-# 5. Create an administrator (role is set to "admin" automatically)
-python manage.py createsuperuser
-
-# 6. Run the dev server
-python manage.py runserver       # http://127.0.0.1:8000
-```
-
-## Security modules
-
-**1. CORS protection** — only `http://localhost:5173` (the React/Vite dev
-server) may call the API from a browser, with credentials enabled so the
-HttpOnly cookies round-trip. Configure via `CORS_ALLOWED_ORIGINS`.
-
-**2. JWT via HttpOnly cookies** — login issues a short-lived (15 min) access
-token and a long-lived (7 day) refresh token. The refresh token is delivered
-*only* inside an HttpOnly, path-scoped cookie, so client-side JavaScript (and
-XSS payloads) can never read it. `/api/auth/refresh/` reads that cookie to mint
-new access tokens.
-
-**3. Strict password policy** — Django's validation engine enforces minimum
-length, blocks common and purely-numeric passwords, and a custom validator
-requires a combination of letters and numbers.
-
-**4. Server-side RBAC** — the `IsAdminUserRole` permission gates all admin
-writes and the metrics dashboard, returning `403 Forbidden` to regular clients.
-
-## API endpoints
+## 📡 API Endpoints
 
 | Method | Path | Access | Description |
 | ------ | ---- | ------ | ----------- |
@@ -84,15 +36,11 @@ writes and the metrics dashboard, returning `403 Forbidden` to regular clients.
 | GET | `/api/admin/dashboard-metrics/` | Admin (RBAC) | System metrics |
 | GET/POST | `/api/orders/` | Authenticated | Own order history / checkout |
 
-## Notes
-
-- The schema is written entirely with the Django ORM, so switching `DATABASES`
-  to PostgreSQL/MySQL needs no model changes.
-- Order line items store a **price snapshot** (`unit_price`, `product_name`) so
-  historical orders stay accurate even when catalog prices change; deleting a
-  product never erases purchase history (`on_delete=SET_NULL`).
-- Order totals are always computed **server-side** — client-supplied totals are
-  never trusted — and stock is validated/decremented atomically under a row lock.
+## 🧪 Testing & Database Notes
+* **WAL Hardening:** The database is optimized using Write-Ahead Logging (WAL) to prevent SQLite deadlocks during concurrent checkout load testing.
+* **Database Agnostic:** The schema is written entirely with the Django ORM, so switching `DATABASES` to PostgreSQL needs no model changes.
+* **Immutable Order History:** Order line items store a **price snapshot** (`unit_price`, `product_name`) so historical orders stay accurate even when catalog prices change. Deleting a product never erases purchase history (`on_delete=SET_NULL`).
+* **Server-Side Trust:** Order totals are always computed **server-side** — client-supplied totals are never trusted — and stock is validated/decremented atomically under a row lock.
 
 ---
 
