@@ -22,14 +22,28 @@ Endpoint map
 """
 
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.orders.views import DashboardMetricsView, OrderListCreateView
 from apps.products.views import AdminProductViewSet
 
-from django.urls import path
-from django.shortcuts import redirect
+
+def health_check(request):
+    """Lightweight root endpoint (HTTP 200 JSON).
+
+    Returning a fast 200 at `/` is friendlier to uptime monitors and Vercel
+    than a redirect, and confirms the service is alive without touching the DB.
+    """
+    return JsonResponse(
+        {
+            "status": "ok",
+            "service": "DailyEssentials API",
+            "docs": "/api/products/",
+        }
+    )
+
 
 # Admin-only product management router (RBAC enforced on the viewset).
 admin_router = DefaultRouter()
@@ -45,7 +59,7 @@ api_admin_patterns = [
 ]
 
 urlpatterns = [
-    path('', lambda request: redirect('api/products/')), # Redirect root
+    path("", health_check, name="health-check"),
     path("django-admin/", admin.site.urls),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/products/", include("apps.products.urls")),

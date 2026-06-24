@@ -5,3 +5,8 @@ djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
 django-filter==24.2
 PyJWT==2.13.0
+# Production database (cloud PostgreSQL on Vercel)
+dj-database-url==2.2.0
+psycopg2-binary==2.9.9
+# Static file serving in production (Django admin UI, etc.)
+whitenoise==6.7.0
