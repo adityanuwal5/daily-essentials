@@ -6,7 +6,9 @@ set -e   # fail the build immediately if any command errors
 # can serve the admin UI. DEBUG must be off so the manifest storage is used.
 
 echo "==> Installing dependencies..."
-pip install -r requirements.txt
+# --break-system-packages bypasses PEP 668 (externally-managed-environment),
+# which the Vercel build image enforces on the system Python.
+pip install -r requirements.txt --break-system-packages
 
 echo "==> Applying database migrations..."
 python manage.py migrate --noinput
