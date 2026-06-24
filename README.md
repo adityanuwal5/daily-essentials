@@ -93,3 +93,11 @@ writes and the metrics dashboard, returning `403 Forbidden` to regular clients.
   product never erases purchase history (`on_delete=SET_NULL`).
 - Order totals are always computed **server-side** — client-supplied totals are
   never trusted — and stock is validated/decremented atomically under a row lock.
+
+---
+
+## 🧠 AI Prompt Engineering & Architecture
+
+This project was developed using iterative prompt engineering to solve complex multi-agent synchronization and WAL database hardening. You can inspect the full developmental log and the exact prompts used to guide the architecture right here in the repository:
+
+👉 **[View the AI Development Transcript](./CLAUDE_PROMPTS.md)**
