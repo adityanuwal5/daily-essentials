@@ -14,8 +14,13 @@ ENV/
 *.log
 db.sqlite3
 db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
 /staticfiles/
 /media/
+
+# Data migration dumps (contain hashed passwords — never commit)
+datadump*.json
 
 # Environment / secrets
 .env

@@ -34,7 +34,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = env_bool("DJANGO_DEBUG", default=True)
 
 ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1,daily-essentials-vert.vercel.app",
 ).split(",")
 
 
@@ -60,6 +61,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise serves collected static files (incl. the Django admin UI) in
+    # production. It must come directly after SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     # CORS must sit as high as possible, and before CommonMiddleware, so the
     # appropriate Access-Control headers are attached to every response.
     "corsheaders.middleware.CorsMiddleware",
@@ -93,28 +97,47 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 
 # --------------------------------------------------------------------------- #
-# Database — local SQLite relational DBMS.
-# All schema is expressed through the Django ORM, keeping the project
-# database-agnostic: pointing DATABASES at Postgres/MySQL requires no model
-# changes.
+# Database — environment-aware.
+#
+# * Local development: file-based SQLite (no setup needed — works out of box).
+# * Production (Vercel): set the DATABASE_URL environment variable to a cloud
+#   PostgreSQL connection string (Neon/Supabase) and the project switches to it
+#   automatically. The schema is ORM-only, so no model or migration changes are
+#   needed to move between engines.
 # --------------------------------------------------------------------------- #
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-        # SQLite write-concurrency hardening. `timeout` makes a blocked writer
-        # wait (up to 20s) for the lock instead of immediately raising
-        # "database is locked" -> HTTP 500 under concurrent checkouts.
-        #
-        # NOTE: the `init_command` OPTION is only supported on Django 5.1+. On
-        # this project's Django 5.0, WAL journal mode is enabled instead via a
-        # `connection_created` signal (see apps/products/apps.py), which runs
-        # `PRAGMA journal_mode=WAL` on every new SQLite connection.
-        "OPTIONS": {
-            "timeout": 20,
-        },
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    # --- Production: cloud PostgreSQL parsed from one connection string ---- #
+    # dj_database_url turns "postgres://user:pass@host:5432/dbname" into the
+    # dict Django expects. Imported here so local SQLite-only setups don't
+    # need the package installed.
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,         # reuse connections instead of reconnecting
+            conn_health_checks=True,  # transparently drop dead connections
+            ssl_require=True,         # Neon/Supabase require TLS
+        )
     }
-}
+else:
+    # --- Local development: SQLite ---------------------------------------- #
+    # `timeout` makes a blocked writer wait (up to 20s) for the lock instead of
+    # immediately raising "database is locked" under concurrent checkouts. WAL
+    # journal mode is enabled via a `connection_created` signal (see
+    # apps/products/apps.py) — that signal is a no-op on PostgreSQL, so the
+    # production path above is unaffected.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": {
+                "timeout": 20,
+            },
+        }
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -158,9 +181,28 @@ USE_TZ = True
 
 
 # --------------------------------------------------------------------------- #
-# Static files
+# Static files — served by WhiteNoise in production.
+# `collectstatic` gathers everything (including the Django admin assets) into
+# STATIC_ROOT during the Vercel build; WhiteNoise then serves them with
+# compression + far-future caching. The compressed/manifest storage is used
+# only when DEBUG is off so local `runserver` keeps serving static files
+# directly without needing a collectstatic run first.
 # --------------------------------------------------------------------------- #
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -223,14 +265,26 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF trusted origins kept in sync with the allowed CORS origins.
-CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
+# CSRF trusted origins — required for the admin login form to POST over HTTPS.
+# Includes the local dev origins plus the production domain by default.
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "https://daily-essentials-vert.vercel.app,http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
 
 
-# settings.py
-
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'daily-essentials-vert.vercel.app',
-]
+# --------------------------------------------------------------------------- #
+# Production security hardening — only applied when DEBUG is off.
+# Vercel terminates TLS at its edge and forwards the original scheme in the
+# X-Forwarded-Proto header, so SECURE_PROXY_SSL_HEADER lets Django correctly
+# detect HTTPS (required for secure cookies and the SSL redirect to work).
+# --------------------------------------------------------------------------- #
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
