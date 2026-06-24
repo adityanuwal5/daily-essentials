@@ -45,15 +45,10 @@ api_admin_patterns = [
 ]
 
 urlpatterns = [
+    path('', lambda request: redirect('api/products/')), # Redirect root
     path("django-admin/", admin.site.urls),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/products/", include("apps.products.urls")),
     path("api/orders/", OrderListCreateView.as_view(), name="orders"),
     path("api/admin/", include((api_admin_patterns, "admin-api"))),
-]
-
-
-urlpatterns = [
-    # ... your existing paths ...
-    path('', lambda request: redirect('api/products/')), 
 ]
