@@ -20,14 +20,14 @@ Before getting started, ensure you have the following software installed on your
 {/* Reason: Order is critical here; executing frontend or migration steps out of sequence will cause build and connection failures. */}
   <Step title="Clone the Repository" subtitle="Step 1">
     Open your terminal, navigate to your desired directory, and clone the codebase:
-```bash
-    git clone [https://github.com/adityanuwal5/daily-essentials.git]
+    ```bash
+    git clone [https://github.com/adityanuwal5/daily-essentials.git](https://github.com/adityanuwal5/daily-essentials.git)
     cd daily-essentials
     ```
   </Step>
 
-  <Step title="Backend Setup (Django)" subtitle="Step 2">
-    From the root `daily-essentials` directory, set up your Python environment and database.
+  <Step title="Backend Setup (Django & Neon DB)" subtitle="Step 2">
+    From the root `daily-essentials` directory, set up your Python environment and connect to the cloud database.
 
     **1. Create and activate a virtual environment:**
     ```bash
@@ -41,31 +41,31 @@ Before getting started, ensure you have the following software installed on your
     source venv/bin/activate
     ```
 
-    **2. Install dependencies & configure environment variables:**
+**2. Install dependencies & configure environment variables:**
     ```bash
     pip install -r requirements.txt
-    copy .env.example .env
     ```
-    > 💡 **Tip:** Open the newly created `.env` file in your code editor to modify any default environment variables if necessary.
+    Create a `.env` file in the root directory and add your Neon database connection string:
+    ```env
+    DATABASE_URL=postgresql://<user>:<password>@<neon_host>/neondb?sslmode=require
+    ```
 
     **3. Apply migrations and seed the database catalog:**
     ```bash
     python manage.py migrate
-    python manage.py seed_db
+    python manage.py loaddata datadump_clean.json
     ```
-    *Note: If you need to wipe the database clean before seeding, append the `--flush` flag: `python manage.py seed_db --flush`*
 
     **4. Create an administrator account:**
     ```bash
     python manage.py createsuperuser
     ```
-    *(The system will automatically assign the `"admin"` role to this account).*
 
     **5. Start the development server:**
     ```bash
     python manage.py runserver
     ```
-    The backend api will now be running locally at `http://127.0.0.1:8000`.
+    The backend API will now be running locally at `http://127.0.0.1:8000`.
   </Step>
 
   <Step title="Frontend Setup (React + Vite)" subtitle="Step 3">
@@ -77,7 +77,14 @@ Before getting started, ensure you have the following software installed on your
     npm install
     ```
 
-    **2. Start the Vite development server:**
+    **2. Configure the API URL:**
+    Create a `.env` file inside the `daily-essential-frontend` folder to point the UI to the backend API:
+    ```env
+    # Use localhost for local backend testing, or the Vercel URL for live testing
+    VITE_API_BASE_URL=http://localhost:8000/api/
+    ```
+
+    **3. Start the Vite development server:**
     ```bash
     npm run dev
     ```
@@ -99,5 +106,6 @@ Before getting started, ensure you have the following software installed on your
 
 ## 🛠️ Troubleshooting
 
-*   **Virtual Environment won't activate?** On Windows PowerShell, you might need to run `Set-ExecutionPolicy RemoteSigned -Scope Process` first to allow script execution in your session.
+* **Virtual Environment won't activate?** On Windows PowerShell, you might need to run `Set-ExecutionPolicy RemoteSigned -Scope Process` first to allow script execution in your session.
 *   **Port conflicts?** If ports `8000` or `5173` are already in use by another application, Django and Vite will prompt you or select an alternative port. Make sure to update your `.env` URLs accordingly.
+*   **CORS Errors on Frontend?** If you point your frontend `.env` to the live Vercel API, make sure your local `http://localhost:5173` is added to the `CORS_ALLOWED_ORIGINS` environment variable in your Vercel backend settings.
