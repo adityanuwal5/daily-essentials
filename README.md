@@ -49,3 +49,13 @@ A secure, production-grade full-stack web application built to manage and delive
 This project was developed using iterative prompt engineering to solve complex multi-agent synchronization and WAL database hardening. You can inspect the full developmental log and the exact prompts used to guide the architecture right here in the repository:
 
 👉 **[View the AI Development Transcript](./CLAUDE_PROMPTS.md)**
+
+---
+
+# DailyEssentials - Full Stack Development Log
+
+**[View the Detailed Document Tracks](./DOCUMENT_TRACKS.md)**
+
+This document tracks the development progression of **DailyEssentials**, a quick-commerce web application. The journey is divided into the core phases of development: Frontend scaffolding, Backend architecture, Deployment & Troubleshooting, and the final System Merger.
+
+---
